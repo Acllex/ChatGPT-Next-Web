@@ -264,3 +264,15 @@ export function isVisionModel(model: string) {
     visionKeywords.some((keyword) => model.includes(keyword)) || isGpt4Turbo
   );
 }
+
+export function getCookie(key: string) {
+  const name = key + "=";
+  const ca = document.cookie.split(";");
+  for (const item of ca) {
+    const c = item.trim();
+    if (c.indexOf(name) === 0) {
+      return c.slice(name.length, c.length);
+    }
+  }
+  return "";
+}

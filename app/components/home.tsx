@@ -9,7 +9,7 @@ import styles from "./home.module.scss";
 import BotIcon from "../icons/bot.svg";
 import LoadingIcon from "../icons/three-dots.svg";
 
-import { getCSSVar, useMobileScreen } from "../utils";
+import { getCSSVar, useMobileScreen, getCookie } from "../utils";
 
 import dynamic from "next/dynamic";
 import { ModelProvider, Path, SlotID } from "../constant";
@@ -192,8 +192,13 @@ export function Home() {
   useSwitchTheme();
   useLoadData();
   useHtmlLang();
+  const accessStore = useAccessStore();
 
   useEffect(() => {
+    const joonToken = getCookie("joon_token");
+    accessStore.update(
+      (access) => (access.openaiApiKey = joonToken?.split("%20")[1] ?? ""),
+    );
     console.log("[Config] got config from build time", getClientConfig());
     useAccessStore.getState().fetch();
   }, []);
