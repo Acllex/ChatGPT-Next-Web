@@ -30,13 +30,14 @@ import EditIcon from "../icons/rename.svg";
 import ConfirmIcon from "../icons/confirm.svg";
 import CancelIcon from "../icons/cancel.svg";
 import ImageIcon from "../icons/image.svg";
-
+import UploadIcon from "../icons/upload.svg";
 import LightIcon from "../icons/light.svg";
 import DarkIcon from "../icons/dark.svg";
 import AutoIcon from "../icons/auto.svg";
 import BottomIcon from "../icons/bottom.svg";
 import StopIcon from "../icons/pause.svg";
 import RobotIcon from "../icons/robot.svg";
+import FileIcon from "../icons/file.png";
 
 import {
   ChatMessage,
@@ -61,7 +62,7 @@ import {
   isVisionModel,
 } from "../utils";
 
-import { compressImage } from "@/app/utils/chat";
+import { compressImage, blobToBase64 } from "@/app/utils/chat";
 
 import dynamic from "next/dynamic";
 
@@ -517,7 +518,7 @@ export function ChatActions(props: {
         <ChatAction
           onClick={props.uploadImage}
           text={Locale.Chat.InputActions.UploadImage}
-          icon={props.uploading ? <LoadingButtonIcon /> : <ImageIcon />}
+          icon={props.uploading ? <LoadingButtonIcon /> : <UploadIcon />}
         />
       )}
       <ChatAction
@@ -770,9 +771,10 @@ function _Chat() {
       return;
     }
     setIsLoading(true);
-    chatStore
-      .onUserInput(userInput, attachImages)
-      .then(() => setIsLoading(false));
+    const attach = attachImages.map((item) =>
+      item.indexOf("image") !== -1 ? item : FileIcon.src,
+    );
+    chatStore.onUserInput(userInput, attach).then(() => setIsLoading(false));
     setAttachImages([]);
     localStorage.setItem(LAST_INPUT_KEY, userInput);
     setUserInput("");
@@ -1169,8 +1171,8 @@ function _Chat() {
       ...(await new Promise<string[]>((res, rej) => {
         const fileInput = document.createElement("input");
         fileInput.type = "file";
-        fileInput.accept =
-          "image/png, image/jpeg, image/webp, image/heic, image/heif";
+        // fileInput.accept =
+        //   "image/png, image/jpeg, image/webp, image/heic, image/heif";
         fileInput.multiple = true;
         fileInput.onchange = (event: any) => {
           setUploading(true);
@@ -1178,9 +1180,9 @@ function _Chat() {
           const imagesData: string[] = [];
           for (let i = 0; i < files.length; i++) {
             const file = event.target.files[i];
-            compressImage(file, 256 * 1024)
-              .then((dataUrl) => {
-                imagesData.push(dataUrl);
+            if (file.type.indexOf("image") === -1) {
+              blobToBase64(file).then((base64: string) => {
+                imagesData.push(base64);
                 if (
                   imagesData.length === 3 ||
                   imagesData.length === files.length
@@ -1188,11 +1190,24 @@ function _Chat() {
                   setUploading(false);
                   res(imagesData);
                 }
-              })
-              .catch((e) => {
-                setUploading(false);
-                rej(e);
               });
+            } else {
+              compressImage(file, 256 * 1024)
+                .then((dataUrl) => {
+                  imagesData.push(dataUrl);
+                  if (
+                    imagesData.length === 3 ||
+                    imagesData.length === files.length
+                  ) {
+                    setUploading(false);
+                    res(imagesData);
+                  }
+                })
+                .catch((e) => {
+                  setUploading(false);
+                  rej(e);
+                });
+            }
           }
         };
         fileInput.click();

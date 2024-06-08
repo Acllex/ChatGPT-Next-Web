@@ -52,3 +52,18 @@ export function compressImage(file: File, maxSize: number): Promise<string> {
     reader.readAsDataURL(file);
   });
 }
+
+/**
+ * file或blob转base64
+ * @param {*} blob file或者blob
+ * @param {*} callback function (data)通过参数获得base64
+ */
+export function blobToBase64(blob: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      resolve(reader.result as string);
+    });
+    reader.readAsDataURL(blob);
+  });
+}
